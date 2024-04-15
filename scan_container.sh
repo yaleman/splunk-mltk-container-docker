@@ -12,7 +12,7 @@
 if [ -z "$1" ]; then
   echo "No build tag specified. Pick a tag:"
   values=$(cut -d ',' -f 1 tag_mapping.csv)
-  echo $values
+  echo "$values"
   exit
 else
   tag="$1"
@@ -41,7 +41,7 @@ echo "Scanning $container_name"
 docker run -q\
         -v /var/run/docker.sock:/var/run/docker.sock\
         aquasec/trivy:latest\
-        image $container_name --scanners vuln\
-        >> $output_path
+        image "$container_name" --scanners vuln\
+        >> "$output_path"
 
 echo "Scan finished, review output in $output_path"

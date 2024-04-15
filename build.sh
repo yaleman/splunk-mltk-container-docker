@@ -1,4 +1,7 @@
 #!/bin/bash
+
+#shellcheck disable=SC2028,1003
+
 echo '__________________________________________________________________________________________________________________'
 echo ' ________  ________  ___       ___  ___  ________   ___  __            ________  ________  ________  ___          '
 echo '|\   ____\|\   __  \|\  \     |\  \|\  \|\   ___  \|\  \|\  \         |\   ___ \|\   ____\|\   ___ \|\  \         '
@@ -14,7 +17,7 @@ echo 'Splunk> DSDL Container Build Script for Custom Data-Science Runtimes'
 if [ -z "$1" ]; then
   echo "No build tag specified. Pick a tag:"
   values=$(cut -d ',' -f 1 tag_mapping.csv)
-  echo $values
+  echo "$values"
   exit
 else
   tag="$1"
@@ -37,13 +40,13 @@ fi
 line=$(grep "^${tag}," tag_mapping.csv)
 
 if [ "$line" != "" ]; then
-    base_image=$(echo $line | cut -d',' -f2)
-    dockerfile=$(echo $line | cut -d',' -f3)
-    base_requirements=$(echo $line | cut -d',' -f4)
-    specific_requirements=$(echo $line | cut -d',' -f5)
-    runtime=$(echo $line | cut -d',' -f6) 
-    requirements_dockerfile=$(echo $line | cut -d',' -f7) 
-    title=$(echo $line | cut -d',' -f8) 
+    base_image=$(echo "$line" | cut -d',' -f2)
+    dockerfile=$(echo "$line" | cut -d',' -f3)
+    base_requirements=$(echo "$line" | cut -d',' -f4)
+    specific_requirements=$(echo "$line" | cut -d',' -f5)
+    runtime=$(echo "$line" | cut -d',' -f6)
+    requirements_dockerfile=$(echo "$line" | cut -d',' -f7)
+    title=$(echo "$line" | cut -d',' -f8)
 
     echo "Tag: $tag"
     echo "Base Image: $base_image"
@@ -65,9 +68,9 @@ container_name="$repo"mltk-container-$tag
 echo "Target container name: $container_name"
 
 echo "Stopping and removing running containers with this name."
-docker stop $container_name
-docker rm $container_name
-docker rmi $container_name
+docker stop "$container_name"
+docker rm "$container_name"
+docker rmi "$container_name"
 
 base_requirements_id="${base_requirements%.*}"
 specific_requirements_id="${specific_requirements%.*}"
@@ -83,16 +86,16 @@ if [[ -f $compiled_requirements_filename ]]; then
   specific_requirements="empty".txt
 fi
 
-docker build --rm -t $container_name:$version\
-  --build-arg BASE_IMAGE=$base_image \
-  --build-arg TAG=$tag \
-  --build-arg REQUIREMENTS_PYTHON_BASE=$base_requirements \
-  --build-arg REQUIREMENTS_PYTHON_SPECIFIC=$specific_requirements \
-  -f ./dockerfiles/$dockerfile \
-  .
+
 
 # Check exit status
-if [ $? -eq 0 ]; then
+if docker build --rm -t "$container_name:$version"\
+  --build-arg BASE_IMAGE="$base_image" \
+  --build-arg TAG="$tag" \
+  --build-arg REQUIREMENTS_PYTHON_BASE="$base_requirements" \
+  --build-arg REQUIREMENTS_PYTHON_SPECIFIC="$specific_requirements" \
+  -f "./dockerfiles/$dockerfile" \
+  .; then
     echo "Docker build was successful."
 else
     echo "Docker build encountered an error."
@@ -106,10 +109,12 @@ if [ "$runtime" = "nvidia" ]; then
   runtime="none,nvidia"
 fi
 
-echo -e "[$tag]\ntitle = $title\nimage = mltk-container-$tag:$version\nrepo = $repo\nruntime = $runtime" > ./images_conf_files/$tag-images.txt
+echo -e "[$tag]\ntitle = $title\nimage = mltk-container-$tag:$version\nrepo = $repo\nruntime = $runtime" > "./images_conf_files/$tag-images.txt"
 
 # Remove output file if it already exists
-rm -f ./images_conf_files/images.conf
+if [ -f ./images_conf_files/images.conf ]; then
+  rm -f ./images_conf_files/images.conf
+fi
 
 # Loop over all .txt files in the current directory
 for file in ./images_conf_files/*-images.txt; do
